@@ -1,25 +1,39 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
 
 	"github.com/cadimodev/gator/internal/config"
+	"github.com/cadimodev/gator/internal/database"
+	_ "github.com/lib/pq"
 )
 
 type state struct {
+	db  *database.Queries
 	cfg *config.Config
 }
+
+const dbDriverName = "postgres"
 
 func main() {
 	fmt.Println("Welcome to Gator!")
 	cfg, err := config.Read()
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Fatal(err)
 	}
 
+	db, err := sql.Open(dbDriverName, cfg.DbURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	dbQueries := database.New(db)
+
 	programState := &state{
+		db:  dbQueries,
 		cfg: &cfg,
 	}
 
@@ -41,5 +55,4 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 }
