@@ -37,4 +37,5 @@ func (c *commands) initCommands() {
 	c.register("feeds", handlerFeeds)
 	c.register("follow", middlewareLoggedIn(handlerFollow))
 	c.register("following", middlewareLoggedIn(handlerListFeedFollows))
+	c.register("unfollow", middlewareLoggedIn(handlerUnfollow))
 }
