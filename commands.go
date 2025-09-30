@@ -33,4 +33,5 @@ func (c *commands) initCommands() {
 	c.register("reset", handlerReset)
 	c.register("users", handlerUsers)
 	c.register("agg", handlerAgg)
+	c.register("addfeed", handlerAddFeed)
 }
