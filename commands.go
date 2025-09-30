@@ -32,4 +32,5 @@ func (c *commands) initCommands() {
 	c.register("register", handlerRegister)
 	c.register("reset", handlerReset)
 	c.register("users", handlerUsers)
+	c.register("agg", handlerAgg)
 }
