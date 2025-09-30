@@ -3,26 +3,62 @@ package main
 import (
 	"context"
 	"fmt"
-)
+	"log"
+	"time"
 
-const feedURL = "https://www.wagslane.dev/index.xml"
+	"github.com/cadimodev/gator/internal/database"
+)
 
 func handlerAgg(s *state, cmd command) error {
 
-	feed, err := fetchFeed(context.Background(), feedURL)
+	if len(cmd.Args) < 1 || len(cmd.Args) > 2 {
+		return fmt.Errorf("usage: %v <time_between_reqs>", cmd.Name)
+	}
+
+	timeBetweenRequests, err := time.ParseDuration(cmd.Args[0])
 	if err != nil {
+		return fmt.Errorf("invalid duration: %w", err)
+	}
+
+	log.Printf("Collecting feeds every %s...", timeBetweenRequests)
+
+	ticker := time.NewTicker(timeBetweenRequests)
+	for range ticker.C {
+		log.Println("Scrapping...")
+		scrapeFeeds(s)
+	}
+
+	return nil
+}
+
+func scrapeFeeds(s *state) error {
+	feed, err := s.db.GetNextFeedToFetch(context.Background())
+	if err != nil {
+		log.Println("Couldn't get next feeds to fetch: ", err)
 		return err
 	}
 
-	fmt.Println("Title: ", feed.Channel.Title)
-	fmt.Println("Description: ", feed.Channel.Description)
-	for _, item := range feed.Channel.Item {
-		fmt.Println("	Title: ", item.Title)
-		fmt.Println("	Link: ", item.Link)
-		fmt.Println("	Description: ", item.Description)
-		fmt.Println("	PubDate: ", item.PubDate)
-		fmt.Println("***********")
+	log.Println("Found a feed to fetch!")
+	return scrapeFeed(s.db, feed)
+}
+
+func scrapeFeed(db *database.Queries, feed database.Feed) error {
+	_, err := db.MarkFeedFetched(context.Background(), feed.ID)
+	if err != nil {
+		log.Println("Couldn't mark feed %s fetched: %v", feed.Name, err)
+		return err
 	}
+
+	feedData, err := fetchFeed(context.Background(), feed.Url)
+	if err != nil {
+		log.Println("Couldn't collect feed %s: %v", feed.Name, err)
+		return err
+	}
+
+	for _, item := range feedData.Channel.Item {
+		fmt.Printf("Found post: %s\n", item.Title)
+	}
+	log.Printf("Feed %s collected, %v posts found", feed.Name, len(feedData.Channel.Item))
 
 	return nil
 }
