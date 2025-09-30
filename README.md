@@ -1,1 +1,1 @@
-Gator project from Boot.dev
+gator project from Boot.dev
