@@ -42,12 +42,13 @@ func handlerAddFeed(s *state, cmd command, user database.User) error {
 	}
 
 	fmt.Println("Feed created successfully:")
-	fmt.Printf("* ID:            %s\n", feed.ID)
-	fmt.Printf("* Created:       %v\n", feed.CreatedAt)
-	fmt.Printf("* Updated:       %v\n", feed.UpdatedAt)
-	fmt.Printf("* Name:          %s\n", feed.Name)
-	fmt.Printf("* URL:           %s\n", feed.Url)
-	fmt.Printf("* UserID:        %s\n", feed.UserID)
+	fmt.Printf("* ID:            		%s\n", feed.ID)
+	fmt.Printf("* Created:       		%v\n", feed.CreatedAt)
+	fmt.Printf("* Updated:       		%v\n", feed.UpdatedAt)
+	fmt.Printf("* Name:          		%s\n", feed.Name)
+	fmt.Printf("* URL:           		%s\n", feed.Url)
+	fmt.Printf("* UserID:        		%s\n", feed.UserID)
+	fmt.Printf("* LastFetched:       	%s\n", feed.LastFetchedAt.Time)
 	fmt.Println()
 	fmt.Println("=====================================")
 
@@ -68,9 +69,10 @@ func handlerFeeds(s *state, cmd command) error {
 			return err
 		}
 
-		fmt.Println("Name: ", feed.Name)
-		fmt.Println("URL: ", feed.Url)
-		fmt.Println("User Name: ", user.Name)
+		fmt.Printf("* Name:          		%s\n", feed.Name)
+		fmt.Printf("* URL:           		%s\n", feed.Url)
+		fmt.Printf("* User Name:       		%s\n", user.Name)
+		fmt.Printf("* LastFetched:       	%s\n", feed.LastFetchedAt.Time)
 	}
 	return nil
 }

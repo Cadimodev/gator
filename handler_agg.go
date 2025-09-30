@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/cadimodev/gator/internal/database"
+	"github.com/google/uuid"
 )
 
 func handlerAgg(s *state, cmd command) error {
@@ -45,18 +48,47 @@ func scrapeFeeds(s *state) error {
 func scrapeFeed(db *database.Queries, feed database.Feed) error {
 	_, err := db.MarkFeedFetched(context.Background(), feed.ID)
 	if err != nil {
-		log.Println("Couldn't mark feed %s fetched: %v", feed.Name, err)
+		log.Printf("Couldn't mark feed %s fetched: %v", feed.Name, err)
 		return err
 	}
 
 	feedData, err := fetchFeed(context.Background(), feed.Url)
 	if err != nil {
-		log.Println("Couldn't collect feed %s: %v", feed.Name, err)
+		log.Printf("Couldn't collect feed %s: %v", feed.Name, err)
 		return err
 	}
 
 	for _, item := range feedData.Channel.Item {
-		fmt.Printf("Found post: %s\n", item.Title)
+
+		publishedAt, err := time.Parse(time.RFC1123Z, item.PubDate)
+		if err != nil {
+			log.Printf("Couldn't parse publishedAt in feed %s: %v", feed.Name, err)
+			return err
+		}
+
+		_, err = db.CreatePost(context.Background(), database.CreatePostParams{
+			ID:        uuid.New(),
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
+			FeedID:    feed.ID,
+			Title: sql.NullString{
+				String: item.Title,
+				Valid:  true,
+			},
+			Description: sql.NullString{
+				String: item.Description,
+				Valid:  true,
+			},
+			Url:         item.Link,
+			PublishedAt: publishedAt,
+		})
+		if err != nil {
+			if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+				continue
+			}
+			log.Printf("Couldn't create post: %v", err)
+			continue
+		}
 	}
 	log.Printf("Feed %s collected, %v posts found", feed.Name, len(feedData.Channel.Item))
 
